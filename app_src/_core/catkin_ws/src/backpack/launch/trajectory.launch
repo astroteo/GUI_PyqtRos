@@ -1,0 +1,19 @@
+<launch>
+  <!-- Launch file parameters -->
+  <arg name="max_list_append" default="1000" />
+  <arg name="frame_id_name" default="odom" />
+  <arg name="markers_choice" default="point_distance" />
+  <arg name="num_laser_cycles" default="1000" />
+  <arg name="point_distance" default="5.0" />
+  <arg name="index_name" default="index_name" />
+
+  <param name="max_list_append" value="$(arg max_list_append)" type="int" />
+  <param name="frame_id_name" value="$(arg frame_id_name)" type="string" />
+  <!-- laser_cycles|point_distance -->
+  <param name="markers_choice" value="$(arg markers_choice)" type="string" />
+  <param name="num_laser_cycles" value="$(arg num_laser_cycles)" type="int" />
+  <param name="point_distance" value="$(arg point_distance)" type="double" />
+  <param name="index_name" value="$(arg index_name)" type="string" />
+
+  <node pkg="bagpack" type="from_odometry_to_path" name="from_odometry_to_path" output="screen" />
+</launch>

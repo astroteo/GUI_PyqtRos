@@ -1,0 +1,61 @@
+  <!-- True for simulation, false for real-time and bagfiles -->
+  <param name="/use_sim_time" value="true"/>
+
+  <!-- Launch file parameters -->
+  <arg default="true" name="trajectory"/>
+  <param name="trajectory" type="bool" value="$(arg trajectory)"/>
+
+  <group ns="blam">
+    <!-- SLAM -->
+    <node name="blam_slam" output="screen" pkg="blam_slam" required="true" type="blam_slam_offline">
+
+      <!-- Bagfile parameters -->
+      <param name="filename/bag" value="$(arg bagfile)"/>
+      <param name="scan_topic" value="/velodyne_points"/>
+
+      <param name="time_start" value="0.0"/>
+      <param name="time_end" value="-1.0"/>
+      <param name="time_scale" value="-1.0"/>
+
+      <!-- Initial pose -->
+      <rosparam param="init">
+        position: {x: 0.0, y: 0.0, z: 0.0}
+        orientation: {roll: 0.0, pitch: 0.0, yaw: 0.0}
+        position_sigma: {x: 0.1, y: 0.1, z: 0.1}
+        orientation_sigma: {roll: 0.02, pitch: 0.02, yaw: 0.02}
+      </rosparam>
+
+      <!-- Rates -->
+      <rosparam file="/home/teo/Documents/Post-Processor/app_src/bash/blam_slam/blam_rates.yaml"/>
+
+      <!-- Frames -->
+      <rosparam file="/home/teo/Documents/Post-Processor/app_src/bash/blam_slam/blam_frames.yaml"/>
+
+      <!-- Point cloud filter -->
+      <rosparam file="/home/teo/Documents/Post-Processor/app_src/bash/blam_slam/point_cloud_filter.yaml"/>
+
+      <!-- Point cloud odometry -->
+      <rosparam file="/home/teo/Documents/Post-Processor/app_src/bash/blam_slam/point_cloud_odometry.yaml"/>
+
+      <!-- Point cloud localization -->
+      <rosparam file="/home/teo/Documents/Post-Processor/app_src/bash/blam_slam/point_cloud_localization.yaml"/>
+
+      <!-- Point cloud mapper -->
+      <rosparam file="/home/teo/Documents/Post-Processor/app_src/bash/blam_slam/point_cloud_mapper.yaml"/>
+
+      <!-- Point cloud visualization -->
+      <rosparam file="/home/teo/Documents/Post-Processor/app_src/bash/blam_slam/point_cloud_visualizer.yaml"/>
+
+      <!-- Loop closure -->
+      <rosparam file="/home/teo/Documents/Post-Processor/app_src/bash/blam_slam/laser_loop_closure.yaml"/>
+    </node>
+  </group>
+
+  <!--  TRAJECTORY: -->
+  <group if="$(arg trajectory)">
+    <include file="$(find bagpack)/launch/trajectory3D.launch" pass_all_args="false">
+      <arg default="$(arg index_name)" name="index_name"/>
+    </include>
+  </group>
+
+</launch>

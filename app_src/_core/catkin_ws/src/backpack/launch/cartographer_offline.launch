@@ -1,0 +1,74 @@
+<launch>
+  <param name="use_sim_time"  value="true" />
+
+  <!-- Launch file parameters -->
+  <arg name="trajectory" default="true" />
+  <param name="trajectory" value="$(arg trajectory)" type="bool" />
+  <arg name="use_2d" default="true" />
+  <param name="use_2d" value="$(arg use_2d)" type="bool" />
+  <arg name="use_rviz" default="true" />
+  <param name="use_rviz" value="$(arg use_rviz)" type="bool" />
+  <param name="index_name" value="$(arg index_name)" type="string" />
+
+  <node name="robot_state_publisher"
+        pkg="robot_state_publisher"
+        type="robot_state_publisher" />
+
+  <!--  Cartographer 2D: -->
+  <group if="$(arg use_2d)">
+    <param name="robot_description"
+           textfile="$(find bagpack)/conf/urdf/cartographer_2d_with_trajectory.urdf" />
+
+    <node name="cartographer_node"
+          pkg="cartographer_ros"
+          type="cartographer_node"
+          args="
+            -configuration_directory $(find bagpack)/conf/configuration_files
+            -configuration_basename cartographer_2d_with_trajectory.lua"
+        output="screen">
+      <remap from="scan" to="/scan" />
+      <remap from="imu" to="/imu/imu" />
+    </node>
+
+    <node name="rviz" pkg="rviz" type="rviz" required="true" if="$(arg use_rviz)"
+        args="-d $(find bagpack)/conf/rviz/cartographer_2d_with_trajectory.rviz" />
+  </group>
+
+  <!--  Cartographer 3D: -->
+  <group unless="$(arg use_2d)">
+    <param name="robot_description"
+           textfile="$(find bagpack)/conf/urdf/cartographer_3d_with_trajectory.urdf" />
+
+    <node name="cartographer_node"
+          pkg="cartographer_ros"
+          type="cartographer_node"
+          args="
+            -configuration_directory $(find bagpack)/conf/configuration_files
+            -configuration_basename cartographer_3d_with_trajectory.lua"
+        output="screen">
+        <remap from="points2" to="/velodyne_points" />
+        <remap from="imu" to="/imu/imu" />
+    </node>
+
+    <node name="rviz" pkg="rviz" type="rviz" required="true" if="$(arg use_rviz)"
+        args="-d $(find bagpack)/conf/rviz/cartographer_3d_with_trajectory.rviz" />
+  </group>
+
+  <!--  BAG player: -->
+  <node name="playbag" pkg="rosbag" type="play"
+      args="--clock $(arg bag_filename)" />
+
+  <!--  TRAJECTORY: -->
+  <group if="$(arg trajectory)">
+    <include file="$(find bagpack)/launch/trajectory.launch" pass_all_args="false" >
+      <arg name="max_list_append" default="-1" />
+      <arg name="frame_id_name" default="map" />
+      <arg name="markers_choice" default="point_distance" doc="laser_cycles|point_distance"/>
+      <arg name="num_laser_cycles" default="800" />
+      <arg name="point_distance" default="5.0" />
+      <arg name="index_name" default="index_name" />
+    </include>
+  </group>
+
+
+</launch>

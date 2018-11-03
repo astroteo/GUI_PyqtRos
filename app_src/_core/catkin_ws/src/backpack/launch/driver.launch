@@ -1,0 +1,14 @@
+<launch>
+  <!--  VLP-16 -->
+  <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" pass_all_args="false">
+    <arg name="calibration"           value="$(find bagpack)/_driver/16db.yaml" />
+    <arg name="laserscan_ring"        value="-1"    />
+    <arg name="laserscan_resolution"  value="0.007" />
+  </include>
+
+  <!--  IMU -->
+  <include file="$(find imu_vn_100)/launch/vn_100_cont.launch">
+    <arg name="baudrate"        value="115200"      />
+    <arg name="port"            value="/dev/arduino_imu"  />
+  </include>
+</launch>

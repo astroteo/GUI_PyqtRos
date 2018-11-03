@@ -1,0 +1,7 @@
+icp:
+  corr_dist: 2.0
+  iterations: 200
+  max_rotation: 0.1
+  max_translation: 0.09
+  tf_epsilon: 1.0e-10
+  transform_thresholding: false

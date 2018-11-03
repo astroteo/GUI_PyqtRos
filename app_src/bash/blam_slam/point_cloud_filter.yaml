@@ -1,0 +1,11 @@
+filtering:
+  decimate_percentage: 0.0
+  grid_filter: true
+  grid_res: 0.03
+  outlier_filter: false
+  outlier_knn: 10
+  outlier_std: 1.0
+  radius: 0.15
+  radius_filter: false
+  radius_knn: 3
+  random_filter: true

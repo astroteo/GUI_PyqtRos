@@ -1,0 +1,160 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+
+import rospy
+
+from tf.transformations import quaternion_from_euler
+from std_msgs.msg import String
+from nav_msgs.msg import Odometry, Path, OccupancyGrid
+from visualization_msgs.msg import Marker, MarkerArray
+from tf2_msgs.msg import TFMessage
+from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped, TransformStamped
+from sensor_msgs.msg import Joy
+
+import sys
+import json
+from math import sqrt
+from collections import deque
+
+import time
+
+current_milli_time = lambda: int(round(time.time() * 1000))
+
+def callback(data):
+        pose = PoseStamped()
+
+        global xAnt, yAnt, zAnt
+        global x_old, y_old, z_old
+        global cont, marker_cout
+        global out_file
+
+        pose = PoseStamped()
+
+        pose.header.frame_id = frame_id_name
+
+        # translation:
+        pose.pose.position.x = float(data.transforms[1].transform.translation.x)
+        pose.pose.position.y = float(data.transforms[1].transform.translation.y)
+        pose.pose.position.z = float(data.transforms[1].transform.translation.z)
+
+        # rotation:
+        pose.pose.orientation.x = float(data.transforms[1].transform.rotation.x)
+        pose.pose.orientation.y = float(data.transforms[1].transform.rotation.y)
+        pose.pose.orientation.z = float(data.transforms[1].transform.rotation.z)
+        pose.pose.orientation.w = float(data.transforms[1].transform.rotation.w)
+
+        if (xAnt != pose.pose.position.x and yAnt != pose.pose.position.y):
+                pose.header.seq = path.header.seq + 1
+                path.header.frame_id=frame_id_name
+                path.header.stamp = rospy.Time.now()
+                pose.header.stamp = path.header.stamp
+                path.poses.append(pose)
+
+        cont=cont+1
+
+        if max_append > 0 and len(path.poses) > max_append:
+                path.poses.pop(0)
+
+        xAnt=pose.pose.position.x
+        yAnt=pose.pose.position.y
+        zAnt=pose.pose.position.z
+
+        new_marker = Marker()
+        new_marker.header.frame_id = frame_id_name
+        new_marker.header.stamp = rospy.Time.now()
+        new_marker.type = Marker.SPHERE
+        new_marker.action = Marker.ADD
+        marker_cout = marker_cout + 1
+        new_marker.id = marker_cout
+        new_marker.pose.position.x = data.transforms[1].transform.translation.x
+        new_marker.pose.position.y = data.transforms[1].transform.translation.y
+        new_marker.pose.position.z = data.transforms[1].transform.translation.z
+        new_marker.pose.orientation.x = 0
+        new_marker.pose.orientation.y = 0
+        new_marker.pose.orientation.z = 0
+        new_marker.pose.orientation.w = 1
+        new_marker.scale.x = 1
+        new_marker.scale.y = 1
+        new_marker.scale.z = 1
+        new_marker.color.a = 1.0
+        new_marker.color.r = 1.0
+        new_marker.color.g = 0.0
+        new_marker.color.b = 0.0
+
+        pub_path.publish(path)
+        pub_photo.publish(new_marker)
+
+        norm = (x_old - new_marker.pose.position.x)*(x_old - new_marker.pose.position.x)
+        norm = norm + (y_old - new_marker.pose.position.y)*(y_old - new_marker.pose.position.y)
+        norm = norm + (z_old - new_marker.pose.position.z)*(z_old - new_marker.pose.position.z)
+        norm = sqrt(norm)
+
+        # rospy.loginfo("norm => "+str(norm))
+
+        if index_name!="":
+            out_file.write(str(current_milli_time())+" ")
+            out_file.write(str(new_marker.pose.position.x)+" ")
+            out_file.write(str(new_marker.pose.position.y)+" ")
+            out_file.write(str(new_marker.pose.position.z)+"\n")
+
+        if markers_choice == "laser_cycles" and cont % num_laser_cycles == 0:
+            ma.markers.append(new_marker)
+            pub_photos.publish(ma)
+        elif markers_choice == "point_distance" and norm > point_distance:
+            x_old = new_marker.pose.position.x
+            y_old = new_marker.pose.position.y
+            z_old = new_marker.pose.position.z
+            ma.markers.append(new_marker)
+            pub_photos.publish(ma)
+        # return path
+
+
+
+
+if __name__ == '__main__':
+        #Variables initialization
+        global xAnt, yAnt, zAnt
+        global x_old, y_old, z_old
+        global cont, marker_cout
+        global out_file
+        xAnt = yAnt = zAnt = 0.0
+        x_old = y_old = z_old = 0
+        cont = marker_cout = 0
+
+        #Node and msg initialization:
+        rospy.init_node('path_plotter')
+
+        max_append          = rospy.get_param('max_list_append')
+        frame_id_name       = rospy.get_param('frame_id_name')
+        markers_choice      = rospy.get_param('markers_choice')
+        num_laser_cycles    = rospy.get_param('num_laser_cycles')
+        point_distance      = rospy.get_param('point_distance')
+        index_name          = rospy.get_param('index_name')
+
+        if index_name != "":
+            out_file = open(index_name, "a+")
+            rospy.loginfo("Opening "+index_name)
+            out_file.write(" time xpos ypos zpos\n")
+
+        pub_path   = rospy.Publisher('/path',   Path,          queue_size=10)
+        pub_photo  = rospy.Publisher('/photo',  Marker,        queue_size=10)
+        pub_photos = rospy.Publisher('/photos', MarkerArray,   queue_size=10)
+
+        path    = Path()
+        ma      = MarkerArray()
+        msg     = TransformStamped()
+
+        rospy.loginfo("Subscription to the /tf")
+        msg = rospy.Subscriber('/tf', TFMessage, callback)
+
+        rate = rospy.Rate(300) # 30hz
+        try:
+                while not rospy.is_shutdown():
+                    rate.sleep()
+        except rospy.ROSInterruptException:
+                pass
+
+        if index_name != "":
+            rospy.loginfo("closing "+index_name)
+            out_file.close()

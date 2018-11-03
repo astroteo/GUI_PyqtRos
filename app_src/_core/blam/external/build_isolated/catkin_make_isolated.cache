@@ -1,0 +1,2 @@
+
+-DCMAKE_BUILD_TYPE=Release -G Unix Makefiles -DCATKIN_DEVEL_PREFIX=/home/baiguera/Dropbox/blam/external/devel_isolated -DCMAKE_INSTALL_PREFIX=/home/baiguera/Dropbox/blam/external/install_isolated

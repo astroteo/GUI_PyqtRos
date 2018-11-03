@@ -1,0 +1,2 @@
+blam_example:blam_slam:geometry_utils:laser_loop_closure:measurement_synchronizer:parameter_utils:point_cloud_filter:point_cloud_localization:point_cloud_mapper:point_cloud_odometry:point_cloud_visualizer:pose_graph_msgs
+-DCMAKE_BUILD_TYPE=Release -DCATKIN_DEVEL_PREFIX=/home/baiguera/Dropbox/blam/internal/devel -DCMAKE_INSTALL_PREFIX=/home/baiguera/Dropbox/blam/internal/install -G Unix Makefiles

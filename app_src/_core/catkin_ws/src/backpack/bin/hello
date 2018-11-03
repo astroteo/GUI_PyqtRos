@@ -1,0 +1,6 @@
+#! /usr/bin/env python
+
+import bagpack.hello
+
+if __name__ == '__main__':
+	bagpack.hello.say('my friend!')

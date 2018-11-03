@@ -1,0 +1,106 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+
+import rospy
+
+from visualization_msgs.msg import Marker
+from rosgraph_msgs.msg import Clock
+
+import numpy as np
+
+from tf.transformations import quaternion_from_euler
+from std_msgs.msg import String
+from nav_msgs.msg import Odometry, Path, OccupancyGrid
+
+
+from tf2_msgs.msg import TFMessage
+from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped, TransformStamped
+from sensor_msgs.msg import Joy
+
+import sys
+import json
+from math import sqrt
+from collections import deque
+
+import time
+
+current_milli_time = lambda: int(round(time.time() * 1000))
+
+def callback1(data):
+        global data_saved
+        data_saved = data
+        # np = len(data_saved.points)
+        # rospy.loginfo(np)
+
+def callback2(data):
+        global t
+        global data_saved
+        global old_time_stamp
+
+        time_stamp = int(str(data.clock)) / 1000000
+        if len(t) > 0:
+            np = len(data_saved.points)
+            nt = len(t)
+            l  = np - nt
+            dt = time_stamp - old_time_stamp
+            if(l>0):
+                s = dt / l
+                for i in xrange(l):
+                        t.append(time_stamp + i*s)
+        else:
+            t.append(time_stamp)
+
+        old_time_stamp = time_stamp
+
+if __name__ == '__main__':
+        #Variables initialization
+        global out_file
+        global t
+        global data_saved
+        global np
+        global old_time_stamp
+
+        data_saved = Marker()
+        t = []
+
+        #Node and msg initialization:
+        rospy.init_node('odometry3d')
+
+        index_name          = rospy.get_param('index_name')
+
+        if index_name == "" :
+            # TODO: sistemare
+            index_name = "/tmp/prova.csv"
+
+        out_file = open(index_name, "w+")
+        rospy.loginfo("Opening "+index_name)
+        out_file.write(" time(ms); xpos; ypos; zpos\n")
+
+
+        rospy.loginfo("Subscription to the /blam/blam_slam/odometry_edges")
+
+        msg2 = rospy.Subscriber('/clock', Clock, callback2)
+        msg1 = rospy.Subscriber('/blam/blam_slam/odometry_edges', Marker, callback1)
+
+        rate = rospy.Rate(300) # 30hz
+
+        try:
+                while not rospy.is_shutdown():
+                    rate.sleep()
+        except rospy.ROSInterruptException:
+                pass
+
+
+        np = len(t)
+        for i in xrange(np):
+                output =  str(t[i])+";"
+                output += str(data_saved.points[i].x)+";"
+                output += str(data_saved.points[i].y)+";"
+                output += str(data_saved.points[i].z)+"\n"
+                out_file.write(output)
+                # For the debug use:
+                # rospy.loginfo(str(i)+" -> "+output)
+
+        rospy.loginfo("closing "+index_name)
+        out_file.close()
